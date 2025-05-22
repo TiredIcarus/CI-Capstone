@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capstone Weather Channel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      background-color: #596061;
+      background-size: cover;
+      background-position: center;
+    }
+    #sidebar {
+      width: 300px;
+      padding: 20px;
+      background-color: rgba(62, 129, 228, 0.8);
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+    }
+    .city-block {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+      text-align: center;
+    }
+    #content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px; /* Space between elements */
+      margin-top: 20px;
+    }
+    #weather {
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      border-radius: 8px;
+      width: 300px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body id="body">
+  <div id="sidebar">
+    <h2>World Weather</h2>
+    <div id="tokyo-weather" class="city-block"></div>
+    <div id="newyork-weather" class="city-block"></div>
+    <div id="london-weather" class="city-block"></div>
+    <div id="sydney-weather" class="city-block"></div>
+  </div>
+  <div id="content">
+    <h1>Ren's Forcast</h1>
+    <div id="controls">
+      <input type="text" id="city" placeholder="Enter city name">
+      <div>
+        <label for="units">Select units:</label>
+        <select id="units">
+          <option value="metric">Metric (°C)</option>
+          <option value="imperial">Imperial (°F)</option>
+        </select>
+      </div>
+      <button onclick="getWeather()">Get Weather</button>
+    </div>
+    <div id="weather"></div>
+  </div>
+
+  <script>
+    async function getWeather() {
+      const city = document.getElementById('city').value;
+      const units = document.getElementById('units').value;
+      if (!city) {
+        alert('Please enter a city name');
+        return;
+      }
+      const response = await fetch(`/weather?city=${city}&units=${units}`);
+      const data = await response.json();
+      if (response.status === 200) {
+        const tempUnit = units === 'metric' ? '°C' : '°F';
+        document.getElementById('weather').innerHTML = `
+          <h2>${data.name}</h2>
+          <p>Temperature: ${data.main.temp} ${tempUnit}</p>
+          <p>Weather: ${data.weather[0].description}</p>
+        `;
+        changeBackground(data.weather[0].main);
+      } else {
+        document.getElementById('weather').innerHTML = '<p>Error fetching weather data</p>';
+      }
+    }
+
+    function changeBackground(weather) {
+      const body = document.getElementById('body');
+
+      switch (weather.toLowerCase()) {
+
+        case 'clear':
+          body.style.backgroundImage = "url('/images/clear.jpg')";
+          break;
+
+        case 'clouds':
+          body.style.backgroundImage = "url('/images/clouds.jpg')";
+          break;
+
+        case 'rain':
+          body.style.backgroundImage = "url('/images/rain.jpg')";
+          break;
+
+        case 'snow':
+          body.style.backgroundImage = "url('/images/snow.jpg')";
+          break;
+
+        case 'thunderstorm':
+          body.style.backgroundImage = "url('/images/thunderstorm.jpg')";
+          break;
+
+        case 'mist':
+          body.style.backgroundImage = "url('/images/mist.jpg')";
+          break;
+
+        default:
+          body.style.backgroundImage = "url('/images/default.jpg')";
+          break;
+      }
+    }
+
+    async function loadConstantWeather() {
+      const response = await fetch('/constant-weather');
+      const data = await response.json();
+      if (response.status === 200) {
+        displayWeather('tokyo-weather', 'Tokyo', data.tokyo);
+        displayWeather('newyork-weather', 'New York', data.newYork);
+        displayWeather('london-weather', 'London', data.london);
+        displayWeather('sydney-weather', 'Sydney', data.sydney);
+      } else {
+        document.getElementById('sidebar').innerHTML = '<p>Error fetching constant weather data</p>';
+      }
+    }
+
+    function displayWeather(elementId, cityName, weatherData) {
+      document.getElementById(elementId).innerHTML = `
+        <h3>${cityName}</h3>
+        <p>Temperature: ${weatherData.main.temp} °C</p>
+        <p>Weather: ${weatherData.weather[0].description}</p>
+      `;
+    }
+
+    window.onload = loadConstantWeather;
+  </script>
+</body>
+</html>
