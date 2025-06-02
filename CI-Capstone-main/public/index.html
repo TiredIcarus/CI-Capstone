@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capstone Weather Channel</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <style>
+    .demo-card-square.mdl-card {
+      width: 300px;
+      height: 320px;
+      margin: 16px;
+      display: inline-block;
+    }
+    .demo-card-square > .mdl-card__title {
+      color: #fff;
+    }
+    .cards-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      padding: 20px;
+    }
+    /* Different city card colors */
+    .tokyo-card {
+      background: linear-gradient(135deg, #46B6AC 0%, #1E88E5 100%);
+    }
+    .newyork-card {
+      background: linear-gradient(135deg, #FF7043 0%, #E53935 100%);
+    }
+    .london-card {
+      background: linear-gradient(135deg, #7E57C2 0%, #3949AB 100%);
+    }
+    .paris-card {
+      background: linear-gradient(135deg, #66BB6A 0%, #43A047 100%);
+    }
+    .sydney-card {
+      background: linear-gradient(135deg, #FFA726 0%, #FB8C00 100%);
+    }
+    .dubai-card {
+      background: linear-gradient(135deg, #26C6DA 0%, #00ACC1 100%);
+    }
+    .weather-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    
+    /* Search Tab Styles */
+    #search-weather-content {
+      padding: 24px;
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;              
+      flex-direction: column;     
+      align-items: center;
+    }
+    
+    #search-controls {
+      width: 100%;
+      padding: 24px;
+      margin-bottom: 24px;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    #search-results {
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      margin-bottom: 24px;
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .search-card-title {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #3f51b5;
+    }
+    
+    .search-input-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .search-button {
+      margin-left: 16px;
+      height: 56px;
+    }
+    
+    /* Favorites Tab Styles */
+    #favorites-content {
+      padding: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    .favorites-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .favorites-title {
+      font-size: 24px;
+      color: #3f51b5;
+    }
+    
+    .empty-favorites {
+      text-align: center;
+      padding: 40px;
+      color: #757575;
+    }
+    
+    .empty-favorites i {
+      font-size: 60px;
+      margin-bottom: 20px;
+      color: #e0e0e0;
+    }
+    
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 20px 0;
+    }
+    
+    .favorite-card {
+      position: relative;
+    }
+    
+    .favorite-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+    
+    /* Weather result styles */
+    .weather-result-card {
+      width: 100%;
+      max-width: 500px;
+      padding: 24px;
+      text-align: center;
+    }
+    
+    .weather-main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    
+    .weather-temp {
+      font-size: 48px;
+      font-weight: 300;
+      margin: 0 16px;
+    }
+    
+    .weather-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      text-align: middle;
+      margin-top: 16px;
+    }
+    
+    .weather-detail-item {
+      display: flex;
+      align-items: center;
+    }
+    
+    .weather-detail-item i {
+      margin-right: 8px;
+      color: #757575;
+    }
+    
+    /* Background image for search tab */
+    #scroll-tab-2 {
+      position: relative;
+      min-height: 100vh;
+    }
+    
+    #scroll-tab-2::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      z-index: -1;
+      transition: background-image 0.5s ease;
+    }
+    
+    /* Slight overlay to improve readability */
+    #scroll-tab-2::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.3);
+      z-index: -1;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .search-input-container {
+        flex-direction: column;
+      }
+      
+      .search-button {
+        margin-left: 0;
+        margin-top: 16px;
+        width: 100%;
+      }
+      
+      .weather-details {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    /* Add these new styles for weather display */
+    .weather-display {
+      text-align: center;
+    }
+    
+    .weather-display h2 {
+      color: #3f51b5;
+      margin-bottom: 16px;
+    }
+    
+    .weather-display p {
+      font-size: 18px;
+      margin: 8px 0;
+      color: #424242;
+    }
+  </style>
+</head>
+<body id="body">
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <header class="mdl-layout__header">
+      <div class="mdl-layout__header-row">
+        <span class="mdl-layout-title">Weather App</span>
+      </div>
+      <div class="mdl-layout__tab-bar mdl-js-ripple-effect">
+        <a href="#scroll-tab-1" class="mdl-layout__tab is-active">World Weather</a>
+        <a href="#scroll-tab-2" class="mdl-layout__tab">Search Weather</a>
+        <a href="#scroll-tab-3" class="mdl-layout__tab">Favorites</a>
+      </div>
+    </header>
+    <div class="mdl-layout__drawer">
+      <span class="mdl-layout-title">Settings</span>
+    </div>
+    
+    <main class="mdl-layout__content">
+      <section class="mdl-layout__tab-panel is-active" id="scroll-tab-1">
+        <div class="page-content">
+          <div class="cards-container">
+            <!-- Tokyo Card -->
+            <div class="demo-card-square mdl-card mdl-shadow--2dp tokyo-card">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">Tokyo</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-icon"><i class="material-icons">wb_sunny</i></div>
+               
+              </div>
+            </div>
+            
+            <!-- New York Card -->
+            <div class="demo-card-square mdl-card mdl-shadow--2dp newyork-card">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">New York</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-icon"><i class="material-icons">wb_cloudy</i></div>
+                
+              </div>
+            </div>
+            
+            <!-- London Card -->
+            <div class="demo-card-square mdl-card mdl-shadow--2dp london-card">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">London</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-icon"><i class="material-icons">grain</i></div>
+                
+              </div>
+            </div>
+            
+            <!-- Paris Card -->
+            <div class="demo-card-square mdl-card mdl-shadow--2dp paris-card">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">Paris</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-icon"><i class="material-icons">wb_sunny</i></div>
+                
+              </div>
+            </div>
+            
+            <!-- Sydney Card -->
+            <div class="demo-card-square mdl-card mdl-shadow--2dp sydney-card">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">Sydney</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-icon"><i class="material-icons">wb_cloudy</i></div> 
+              </div>
+            </div>
+            
+            <!-- Dubai Card -->
+            <div class="demo-card-square mdl-card mdl-shadow--2dp dubai-card">
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">Dubai</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-icon"><i class="material-icons">wb_sunny</i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Search Weather Tab -->
+      <section class="mdl-layout__tab-panel" id="scroll-tab-2">
+        <div id="search-weather-content" class="page-content">
+          <div id="search-controls" class="mdl-card mdl-shadow--2dp">
+            <h3 class="search-card-title">Search for Weather</h3>
+            
+            <div class="search-input-container">
+              <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="flex-grow: 1;">
+                <input class="mdl-textfield__input" type="text" id="city">
+                <label class="mdl-textfield__label" for="city">Enter city name</label>
+              </div>
+              
+              <button onclick="getWeather()" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored search-button">
+                <i class="material-icons">search</i> Search
+              </button>
+            </div>
+            
+            <div style="margin: 16px 0;">
+              <label for="units" style="margin-right: 10px; font-weight: 500;">Units:</label>
+              <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="option-metric">
+                <input type="radio" id="option-metric" class="mdl-radio__button" name="units" value="metric" checked>
+                <span class="mdl-radio__label">Metric (°C)</span>
+              </label>
+              <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="option-imperial">
+                <input type="radio" id="option-imperial" class="mdl-radio__button" name="units" value="imperial">
+                <span class="mdl-radio__label">Imperial (°F)</span>
+              </label>
+            </div>
+          </div>
+          
+          <div id="search-results" class="mdl-card mdl-shadow--2dp weather-result-card">
+            <div id="weather">
+              <i class="material-icons" style="font-size: 60px; color: #e0e0e0;">cloud_queue</i>
+              <h4 style="color: #757575; margin-top: 16px;">Search for a city to see weather information</h4>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Favorites Tab -->
+      <section class="mdl-layout__tab-panel" id="scroll-tab-3">
+        <div id="favorites-content" class="page-content">
+          <div class="favorites-header">
+            <h3 class="favorites-title">Your Favorite Locations</h3>
+            <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+              <i class="material-icons">add</i> Add Favorite
+            </button>
+          </div>
+          
+          <div class="favorites-grid">
+            <!-- favorite cards go here -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    async function getWeather() {
+      const city = document.getElementById('city').value;
+      const units = document.querySelector('input[name="units"]:checked').value;
+      
+      if (!city) {
+        alert('Please enter a city name');
+        return;
+      }
+      
+      try {
+        // Show loading state
+        document.getElementById('weather').innerHTML = `
+          <div class="weather-loading">
+            <i class="material-icons" style="font-size: 60px; color: #e0e0e0; animation: spin 1s linear infinite;">refresh</i>
+            <h4 style="color: #757575; margin-top: 16px;">Loading weather data...</h4>
+          </div>
+        `;
+        
+        const response = await fetch(`/weather?city=${city}&units=${units}`);
+        
+        if (!response.ok) {
+          throw new Error('Weather data not available');
+        }
+        
+        const data = await response.json();
+        const tempUnit = units === 'metric' ? '°C' : '°F';
+        
+        document.getElementById('weather').innerHTML = `
+          <div class="weather-display">
+            <h2>${data.name}</h2>
+            <div class="weather-main">
+              <i class="material-icons weather-icon">${getWeatherIcon(data.weather[0].main)}</i>
+              <span class="weather-temp">${Math.round(data.main.temp)}${tempUnit}</span>
+            </div>
+            <p>${capitalizeFirstLetter(data.weather[0].description)}</p>
+            <div class="weather-details">
+              <div class="weather-detail-item">
+                <i class="material-icons">device_thermostat</i>
+                <span>Feels like: ${Math.round(data.main.feels_like)}${tempUnit}</span>
+              </div>
+              <div class="weather-detail-item">
+                <i class="material-icons">opacity</i>
+                <span>Humidity: ${data.main.humidity}%</span>
+              </div>
+              <div class="weather-detail-item">
+                <i class="material-icons">air</i>
+                <span>Wind: ${data.wind.speed} ${units === 'metric' ? 'km/h' : 'mph'}</span>
+              </div>
+              <div class="weather-detail-item">
+                <i class="material-icons">compress</i>
+                <span>Pressure: ${data.main.pressure} hPa</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        changeBackground(data.weather[0].main);
+      } catch (error) {
+        document.getElementById('weather').innerHTML = `
+          <div class="weather-error">
+            <i class="material-icons" style="font-size: 60px; color: #e0e0e0;">error_outline</i>
+            <h4 style="color: #757575; margin-top: 16px;">${error.message}</h4>
+          </div>
+        `;
+      }
+    }
+
+    function changeBackground(weather) {
+      const searchTab = document.getElementById('scroll-tab-2');
+      const weatherType = weather.toLowerCase();
+
+      switch (weatherType) {
+        case 'clear':
+          searchTab.style.backgroundImage = "url('/images/clear.jpg')";
+          break;
+        case 'clouds':
+          searchTab.style.backgroundImage = "url('/images/clouds.jpg')";
+          break;
+        case 'rain':
+          searchTab.style.backgroundImage = "url('/images/rain.jpg')";
+          break;
+        case 'snow':
+          searchTab.style.backgroundImage = "url('/images/snow.jpg')";
+          break;
+        case 'thunderstorm':
+          searchTab.style.backgroundImage = "url('/images/thunderstorm.jpg')";
+          break;
+        case 'mist':
+        case 'fog':
+        case 'haze':
+          searchTab.style.backgroundImage = "url('/images/mist.jpg')";
+          break;
+        default:
+          searchTab.style.backgroundImage = "url('/images/default.jpg')";
+          break;
+      }
+      
+      // Ensure the background covers the entire tab
+      searchTab.style.backgroundSize = 'cover';
+      searchTab.style.backgroundPosition = 'center';
+      searchTab.style.backgroundRepeat = 'no-repeat';
+      searchTab.style.backgroundAttachment = 'fixed';
+    }
+
+    function getWeatherIcon(weather) {
+      const weatherType = weather.toLowerCase();
+      
+      switch (weatherType) {
+        case 'clear':
+          return 'wb_sunny';
+        case 'clouds':
+          return 'wb_cloudy';
+        case 'rain':
+          return 'grain';
+        case 'snow':
+          return 'ac_unit';
+        case 'thunderstorm':
+          return 'flash_on';
+        case 'mist':
+        case 'fog':
+        case 'haze':
+          return 'blur_on';
+        default:
+          return 'cloud_queue';
+      }
+    }
+
+    function capitalizeFirstLetter(string) {
+      return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    async function loadConstantWeather() {
+      try {
+        const response = await fetch('/constant-weather');
+        
+        if (!response.ok) {
+          throw new Error('Failed to load constant weather data');
+        }
+        
+        const data = await response.json();
+        
+        updateCityCard('tokyo', data.tokyo);
+        updateCityCard('newyork', data.newYork);
+        updateCityCard('london', data.london);
+        updateCityCard('sydney', data.sydney);
+        updateCityCard('paris', data.paris);
+        updateCityCard('dubai', data.dubai);
+        // Add more cities as needed
+        
+      } catch (error) {
+        console.error('Error loading constant weather:', error);
+      }
+    }
+
+    function updateCityCard(cityId, weatherData) {
+      const card = document.querySelector(`.${cityId}-card`);
+      if (!card) return;
+      
+      const supportingText = card.querySelector('.mdl-card__supporting-text');
+      if (supportingText) {
+        supportingText.innerHTML = `
+          <div class="weather-icon"><i class="material-icons">${getWeatherIcon(weatherData.weather[0].main)}</i></div>
+          <p><strong>${Math.round(weatherData.main.temp)}°C</strong></p>
+          <p>${capitalizeFirstLetter(weatherData.weather[0].description)}</p>
+          <p>Humidity: ${weatherData.main.humidity}%</p>
+          <p>Wind: ${weatherData.wind.speed} km/h</p>
+        `;
+      }
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      loadConstantWeather();
+      
+      // Add event listener for the search button
+      document.querySelector('.search-button').addEventListener('click', getWeather);
+      
+      // Also allow search on Enter key
+      document.getElementById('city').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          getWeather();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
