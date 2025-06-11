@@ -16,13 +16,36 @@ const getWeatherData = async (city, units = 'metric') => {
   return response.data;
 };
 
+// Helper function to get local time and timezone string
+const getLocalTimeInfo = (dt, timezone) => {
+  // dt and timezone are in seconds, so multiply by 1000 for ms
+  const localTimestamp = (dt + timezone) * 1000;
+  const localDate = new Date(localTimestamp);
+  // Format time as YYYY-MM-DD HH:mm (no seconds)
+  const localTime = localDate.toLocaleString('en-US', {
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  // Format timezone as UTC±HH:MM
+  const tzHours = Math.floor(timezone / 3600);
+  const tzMinutes = Math.abs(Math.floor((timezone % 3600) / 60));
+  const sign = tzHours >= 0 ? '+' : '-';
+  const tzString = `UTC${sign}${String(Math.abs(tzHours)).padStart(2, '0')}:${String(tzMinutes).padStart(2, '0')}`;
+  return { localTime, timeZone: tzString };
+};
+
 app.get('/weather', async (req, res) => {
   const city = req.query.city;
   const units = req.query.units || 'metric'; // Default to metric if units are not specified
 
   try {
     const data = await getWeatherData(city, units);
-    res.json(data);
+    const { localTime, timeZone } = getLocalTimeInfo(data.dt, data.timezone);
+    res.json({ ...data, localTime, timeZone });
   } catch (error) {
     res.status(500).send('Error fetching weather data');
   }
@@ -34,16 +57,34 @@ app.get('/constant-weather', async (req, res) => {
     const newYorkWeather = await getWeatherData('New York');
     const londonWeather = await getWeatherData('London');
     const sydneyWeather = await getWeatherData('Sydney');
-	const parisWeather = await getWeatherData('Paris');
-	const dubaiWeather = await getWeatherData('Dubai');
+    const parisWeather = await getWeatherData('Paris');
+    const dubaiWeather = await getWeatherData('Dubai');
 
     res.json({
-      tokyo: tokyoWeather,
-      newYork: newYorkWeather,
-      london: londonWeather,
-      sydney: sydneyWeather,s
-	  paris: parisWeather,
-	  dubai: dubaiWeather,
+      tokyo: {
+        weather: tokyoWeather,
+        ...getLocalTimeInfo(tokyoWeather.dt, tokyoWeather.timezone),
+      },
+      newYork: {
+        weather: newYorkWeather,
+        ...getLocalTimeInfo(newYorkWeather.dt, newYorkWeather.timezone),
+      },
+      london: {
+        weather: londonWeather,
+        ...getLocalTimeInfo(londonWeather.dt, londonWeather.timezone),
+      },
+      sydney: {
+        weather: sydneyWeather,
+        ...getLocalTimeInfo(sydneyWeather.dt, sydneyWeather.timezone),
+      },
+      paris: {
+        weather: parisWeather,
+        ...getLocalTimeInfo(parisWeather.dt, parisWeather.timezone),
+      },
+      dubai: {
+        weather: dubaiWeather,
+        ...getLocalTimeInfo(dubaiWeather.dt, dubaiWeather.timezone),
+      },
     });
   } catch (error) {
     res.status(500).send('Error fetching constant weather data');

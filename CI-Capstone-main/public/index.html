@@ -10,7 +10,7 @@
   <style>
     .demo-card-square.mdl-card {
       width: 300px;
-      height: 320px;
+      height: 360px;
       margin: 16px;
       display: inline-block;
     }
@@ -443,6 +443,14 @@
                 <i class="material-icons">compress</i>
                 <span>Pressure: ${data.main.pressure} hPa</span>
               </div>
+              <div class="weather-detail-item">
+                <i class="material-icons">schedule</i>
+                <span>Local Time: ${data.localTime}</span>
+              </div>
+              <div class="weather-detail-item">
+                <i class="material-icons">public</i>
+                <span>Time Zone: ${data.timeZone}</span>
+              </div>
             </div>
           </div>
         `;
@@ -545,18 +553,22 @@
       }
     }
 
+    // Update city card to show time and time zone
     function updateCityCard(cityId, weatherData) {
       const card = document.querySelector(`.${cityId}-card`);
       if (!card) return;
-      
+
       const supportingText = card.querySelector('.mdl-card__supporting-text');
       if (supportingText) {
+        // FIX: Use weatherData.weather.weather[0] instead of weatherData.weather[0]
         supportingText.innerHTML = `
-          <div class="weather-icon"><i class="material-icons">${getWeatherIcon(weatherData.weather[0].main)}</i></div>
-          <p><strong>${Math.round(weatherData.main.temp)}°C</strong></p>
-          <p>${capitalizeFirstLetter(weatherData.weather[0].description)}</p>
-          <p>Humidity: ${weatherData.main.humidity}%</p>
-          <p>Wind: ${weatherData.wind.speed} km/h</p>
+          <div class="weather-icon"><i class="material-icons">${getWeatherIcon(weatherData.weather.weather[0].main)}</i></div>
+          <p><strong>${Math.round(weatherData.weather.main.temp)}°C</strong></p>
+          <p>${capitalizeFirstLetter(weatherData.weather.weather[0].description)}</p>
+          <p>Humidity: ${weatherData.weather.main.humidity}%</p>
+          <p>Wind: ${weatherData.weather.wind.speed} km/h</p>
+          <p><i class="material-icons" style="font-size:18px;vertical-align:middle;">schedule</i> ${weatherData.localTime}</p>
+          <p><i class="material-icons" style="font-size:18px;vertical-align:middle;">public</i> ${weatherData.timeZone}</p>
         `;
       }
     }
