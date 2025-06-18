@@ -18,23 +18,23 @@ const getWeatherData = async (city, units = 'metric') => {
 
 // Helper function to get local time and timezone string
 const getLocalTimeInfo = (dt, timezone) => {
-  // dt and timezone are in seconds, so multiply by 1000 for ms
-  const localTimestamp = (dt + timezone) * 1000;
-  const localDate = new Date(localTimestamp);
-  // Format time as YYYY-MM-DD HH:mm (no seconds)
-  const localTime = localDate.toLocaleString('en-US', {
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  // dt: UTC seconds, timezone: offset in seconds from UTC
+  // Get UTC milliseconds
+  const utcMillis = dt * 1000;
+  // Add timezone offset in milliseconds
+  const localMillis = utcMillis + timezone * 1000;
+  const localDate = new Date(localMillis);
+
+  // Format as YYYY-MM-DD HH:mm
+  const pad = n => String(n).padStart(2, '0');
+  const localTime = `${localDate.getUTCFullYear()}-${pad(localDate.getUTCMonth() + 1)}-${pad(localDate.getUTCDate())} ${pad(localDate.getUTCHours())}:${pad(localDate.getUTCMinutes())}`;
+
   // Format timezone as UTC±HH:MM
   const tzHours = Math.floor(timezone / 3600);
   const tzMinutes = Math.abs(Math.floor((timezone % 3600) / 60));
   const sign = tzHours >= 0 ? '+' : '-';
-  const tzString = `UTC${sign}${String(Math.abs(tzHours)).padStart(2, '0')}:${String(tzMinutes).padStart(2, '0')}`;
+  const tzString = `UTC${sign}${pad(Math.abs(tzHours))}:${pad(tzMinutes)}`;
+
   return { localTime, timeZone: tzString };
 };
 

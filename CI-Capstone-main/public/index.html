@@ -577,6 +577,9 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadConstantWeather();
       
+      // Refresh the weather cards every 60 seconds
+      setInterval(loadConstantWeather, 60000);
+
       // Add event listener for the search button
       document.querySelector('.search-button').addEventListener('click', getWeather);
       
