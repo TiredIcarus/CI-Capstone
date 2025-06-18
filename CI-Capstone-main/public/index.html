@@ -125,10 +125,12 @@
     }
     
     .favorites-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-      padding: 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center; /* This centers the cards horizontally */
+      align-items: flex-start;
+      margin-top: 16px;
     }
     
     .favorite-card {
@@ -245,9 +247,63 @@
       margin: 8px 0;
       color: #424242;
     }
+
+    /* Auth Section Styles */
+    #auth-section {
+      padding: 16px;
+      text-align: right;
+      background-color: rgba(255, 255, 255, 0.9);
+      position: relative;
+      z-index: 10;
+    }
+    
+    #auth-section span {
+      margin-right: 16px;
+      font-weight: 500;
+      color: #3f51b5;
+    }
+    
+    #auth-section input {
+      height: 40px;
+      margin-right: 8px;
+      padding: 0 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    #auth-section button {
+      height: 40px;
+      padding: 0 16px;
+      margin-left: 8px;
+      font-size: 14px;
+    }
+    
+    /* Media query for smaller screens */
+    @media (max-width: 600px) {
+      #auth-section {
+        text-align: center;
+      }
+      
+      #auth-section span {
+        display: block;
+        margin-bottom: 8px;
+      }
+      
+      #auth-section input {
+        width: calc(100% - 16px);
+        margin: 0 8px 8px 0;
+      }
+      
+      #auth-section button {
+        width: 100%;
+        margin: 0 0 8px 0;
+      }
+    }
   </style>
 </head>
 <body id="body">
+  <!-- Add this just after <body id="body"> -->
   <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
     <header class="mdl-layout__header">
       <div class="mdl-layout__header-row">
@@ -261,6 +317,16 @@
     </header>
     <div class="mdl-layout__drawer">
       <span class="mdl-layout-title">Settings</span>
+      <div id="auth-section" style="padding:16px;">
+        <span id="auth-status">Not logged in</span>
+        <form id="login-form" style="display:block; margin-top:12px;">
+          <input type="text" id="login-username" placeholder="Username" required style="width:90%;margin-bottom:8px;">
+          <input type="password" id="login-password" placeholder="Password" required style="width:90%;margin-bottom:8px;">
+          <button type="submit" style="width:100%;">Login</button>
+          <button type="button" id="register-btn" style="width:100%;margin-top:4px;">Register</button>
+        </form>
+        <button id="logout-btn" style="display:none;width:100%;margin-top:8px;">Logout</button>
+      </div>
     </div>
     
     <main class="mdl-layout__content">
@@ -378,13 +444,10 @@
         <div id="favorites-content" class="page-content">
           <div class="favorites-header">
             <h3 class="favorites-title">Your Favorite Locations</h3>
-            <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
-              <i class="material-icons">add</i> Add Favorite
-            </button>
           </div>
           
-          <div class="favorites-grid">
-            <!-- favorite cards go here -->
+          <div class="favorites-grid" id="favorites-list" style="display: flex; flex-wrap: wrap; gap: 16px;">
+            <!-- Favorite cards will be injected here -->
           </div>
         </div>
       </section>
@@ -421,6 +484,9 @@
         document.getElementById('weather').innerHTML = `
           <div class="weather-display">
             <h2>${data.name}</h2>
+            <button id="fav-btn" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" style="margin-bottom:10px;">
+              <i class="material-icons">add</i> Add Favorite
+            </button>
             <div class="weather-main">
               <i class="material-icons weather-icon">${getWeatherIcon(data.weather[0].main)}</i>
               <span class="weather-temp">${Math.round(data.main.temp)}${tempUnit}</span>
@@ -454,6 +520,12 @@
             </div>
           </div>
         `;
+        
+        if (document.getElementById('fav-btn')) {
+          document.getElementById('fav-btn').onclick = function() {
+            addFavorite(data.name);
+          };
+        }
         
         changeBackground(data.weather[0].main);
       } catch (error) {
@@ -573,9 +645,144 @@
       }
     }
 
+    async function loadFavorites() {
+      const list = document.getElementById('favorites-list');
+      list.innerHTML = '';
+      try {
+        const res = await fetch('/favorites');
+        if (!res.ok) throw new Error('Login to see favorites');
+        const favs = await res.json();
+        if (favs.length === 0) {
+          list.innerHTML = '<div class="empty-favorites"><i class="material-icons">star_border</i><p>No favorites yet.</p></div>';
+        } else {
+          // For each favorite, fetch weather and render a card
+          for (const city of favs) {
+            // Fetch weather for the city
+            const weatherRes = await fetch(`/weather?city=${encodeURIComponent(city)}`);
+            if (!weatherRes.ok) continue;
+            const data = await weatherRes.json();
+
+            // Assign color class as in World Weather tab
+            let cardClass = '';
+            const cityLower = city.toLowerCase();
+            if (cityLower.includes('tokyo')) cardClass = 'tokyo-card';
+            else if (cityLower.includes('new york')) cardClass = 'newyork-card';
+            else if (cityLower.includes('london')) cardClass = 'london-card';
+            else if (cityLower.includes('paris')) cardClass = 'paris-card';
+            else if (cityLower.includes('sydney')) cardClass = 'sydney-card';
+            else if (cityLower.includes('dubai')) cardClass = 'dubai-card';
+            else {
+              // Cycle through color classes for other cities
+              const colorClasses = [
+                'tokyo-card',
+                'newyork-card',
+                'london-card',
+                'paris-card',
+                'sydney-card',
+                'dubai-card'
+              ];
+              cardClass = colorClasses[favs.indexOf(city) % colorClasses.length];
+            }
+
+            // Build the card HTML (matching World Weather tab)
+            const div = document.createElement('div');
+            div.className = `demo-card-square mdl-card mdl-shadow--2dp ${cardClass}`;
+            div.style.margin = '8px';
+            div.style.width = '320px';
+            div.innerHTML = `
+              <div class="mdl-card__title mdl-card--expand">
+                <h2 class="mdl-card__title-text">${data.name}</h2>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <div class="weather-main">
+                  <i class="material-icons weather-icon">${getWeatherIcon(data.weather[0].main)}</i>
+                  <span class="weather-temp">${Math.round(data.main.temp)}°C</span>
+                </div>
+                <div class="weather-type" style="margin-bottom:8px;">
+                  ${data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)}
+                </div>
+                <div class="weather-details">
+                  <div class="weather-detail-item"><i class="material-icons">access_time</i> ${data.localTime} (${data.timeZone})</div>
+                  <div class="weather-detail-item"><i class="material-icons">opacity</i> Humidity: ${data.main.humidity}%</div>
+                  <div class="weather-detail-item"><i class="material-icons">air</i> Wind: ${data.wind.speed} m/s</div>
+                </div>
+              </div>
+            `;
+            list.appendChild(div);
+          }
+        }
+      } catch (e) {
+        list.innerHTML = `<div class="empty-favorites"><i class="material-icons">error_outline</i><p>${e.message}</p></div>`;
+      }
+    }
+
+    // Auth logic
+    const authStatus = document.getElementById('auth-status');
+    const loginForm = document.getElementById('login-form');
+    const logoutBtn = document.getElementById('logout-btn');
+    const registerBtn = document.getElementById('register-btn');
+
+    loginForm.onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({username, password})
+      });
+      if (res.ok) {
+        authStatus.textContent = `Logged in as ${username}`;
+        loginForm.style.display = 'none';
+        logoutBtn.style.display = '';
+        loadFavorites();
+      } else {
+        alert('Login failed');
+      }
+    };
+
+    registerBtn.onclick = async function() {
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({username, password})
+      });
+      if (res.ok) {
+        alert('Registered! Now log in.');
+      } else {
+        alert('Registration failed');
+      }
+    };
+
+    logoutBtn.onclick = async function() {
+      await fetch('/logout', {method:'POST'});
+      authStatus.textContent = 'Not logged in';
+      loginForm.style.display = '';
+      logoutBtn.style.display = 'none';
+      loadFavorites();
+    };
+
+    // Add favorite
+    async function addFavorite(location) {
+      const res = await fetch('/favorite', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({location})
+      });
+      if (res.ok) {
+        alert('Added to favorites!');
+        loadFavorites();
+      } else {
+        alert('Login to add favorites');
+      }
+    }
+
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
       loadConstantWeather();
+      loadFavorites();
       
       // Refresh the weather cards every 60 seconds
       setInterval(loadConstantWeather, 60000);
@@ -589,6 +796,8 @@
           getWeather();
         }
       });
+      
+      document.querySelector('a[href="#scroll-tab-3"]').addEventListener('click', loadFavorites);
     });
   </script>
 </body>
