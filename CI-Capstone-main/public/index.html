@@ -248,35 +248,39 @@
       color: #424242;
     }
 
-    /* Auth Section Styles */
+    /* Enhanced Auth Section Styles */
     #auth-section {
       padding: 16px;
-      text-align: right;
-      background-color: rgba(255, 255, 255, 0.9);
-      position: relative;
-      z-index: 10;
-    }
-    
-    #auth-section span {
-      margin-right: 16px;
-      font-weight: 500;
-      color: #3f51b5;
-    }
-    
-    #auth-section input {
-      height: 40px;
-      margin-right: 8px;
-      padding: 0 8px;
-      border: 1px solid #ccc;
+      background-color: white;
       border-radius: 4px;
-      font-size: 14px;
+      box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 
+                  0 3px 1px -2px rgba(0,0,0,.2), 
+                  0 1px 5px 0 rgba(0,0,0,.12);
     }
     
-    #auth-section button {
-      height: 40px;
-      padding: 0 16px;
-      margin-left: 8px;
-      font-size: 14px;
+    #auth-status-container {
+      margin-bottom: 16px; 
+      display: flex; 
+      align-items: center;
+      padding: 8px;
+      border-radius: 4px;
+      background-color: #f5f5f5;
+    }
+    
+    #auth-icon {
+      margin-right: 8px;
+    }
+    
+    #auth-status {
+      transition: color 0.3s ease;
+    }
+    
+    .logged-in-status {
+      color: #4CAF50;
+    }
+    
+    .logged-out-status {
+      color: #F44336;
     }
     
     /* Media query for smaller screens */
@@ -303,7 +307,6 @@
   </style>
 </head>
 <body id="body">
-  <!-- Add this just after <body id="body"> -->
   <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
     <header class="mdl-layout__header">
       <div class="mdl-layout__header-row">
@@ -315,18 +318,54 @@
         <a href="#scroll-tab-3" class="mdl-layout__tab">Favorites</a>
       </div>
     </header>
+    
+    <!-- Enhanced Drawer with Improved Login Section -->
     <div class="mdl-layout__drawer">
-      <span class="mdl-layout-title">Settings</span>
-      <div id="auth-section" style="padding:16px;">
-        <span id="auth-status">Not logged in</span>
-        <form id="login-form" style="display:block; margin-top:12px;">
-          <input type="text" id="login-username" placeholder="Username" required style="width:90%;margin-bottom:8px;">
-          <input type="password" id="login-password" placeholder="Password" required style="width:90%;margin-bottom:8px;">
-          <button type="submit" style="width:100%;">Login</button>
-          <button type="button" id="register-btn" style="width:100%;margin-top:4px;">Register</button>
-        </form>
-        <button id="logout-btn" style="display:none;width:100%;margin-top:8px;">Logout</button>
-      </div>
+      <span class="mdl-layout-title">Log In</span>
+      <nav class="mdl-navigation">
+        <div id="auth-section">
+          <!-- Auth Status -->
+          <div id="auth-status-container">
+            <i class="material-icons" id="auth-icon">account_circle</i>
+            <span id="auth-status" class="mdl-typography--body-1">Not logged in</span>
+          </div>
+          
+          <!-- Login Form (shown when not logged in) -->
+          <form id="login-form" style="display: block;">
+            <!-- Username Field -->
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 100%;">
+              <input class="mdl-textfield__input" type="text" id="login-username" required>
+              <label class="mdl-textfield__label" for="login-username">Username</label>
+            </div>
+            
+            <!-- Password Field -->
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 100%; margin-top: 16px;">
+              <input class="mdl-textfield__input" type="password" id="login-password" required>
+              <label class="mdl-textfield__label" for="login-password">Password</label>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="margin-top: 24px; display: flex; justify-content: space-between;">
+              <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" 
+                      style="flex-grow: 1; margin-right: 8px;">
+                Login
+              </button>
+              <button type="button" id="register-btn" 
+                      class="mdl-button mdl-js-button mdl-button--raised" 
+                      style="flex-grow: 1;">
+                Register
+              </button>
+            </div>
+          </form>
+          
+          <!-- Logout Button (shown when logged in) -->
+          <button id="logout-btn" class="mdl-button mdl-js-button mdl-button--raised mdl-button--accent" 
+                  style="width: 100%; margin-top: 16px; display: none;">
+            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">exit_to_app</i>
+            Logout
+          </button>
+        </div>
+      </nav>
     </div>
     
     <main class="mdl-layout__content">
@@ -464,7 +503,6 @@
       }
       
       try {
-        // Show loading state
         document.getElementById('weather').innerHTML = `
           <div class="weather-loading">
             <i class="material-icons" style="font-size: 60px; color: #e0e0e0; animation: spin 1s linear infinite;">refresh</i>
@@ -527,7 +565,8 @@
           };
         }
         
-        changeBackground(data.weather[0].main);
+        
+        changeBackground(data.weather[0].main, data.dt, data.timezone);
       } catch (error) {
         document.getElementById('weather').innerHTML = `
           <div class="weather-error">
@@ -538,42 +577,53 @@
       }
     }
 
-    function changeBackground(weather) {
-      const searchTab = document.getElementById('scroll-tab-2');
-      const weatherType = weather.toLowerCase();
+		function changeBackground(weather, timestamp, timezoneOffset) {
+	  const searchTab = document.getElementById('scroll-tab-2');
+	  const weatherType = weather.toLowerCase();
+	  
+	  // Calculate local time for the searched city
+	  const utcTime = timestamp ? new Date(timestamp * 1000) : new Date();
+	  const localTime = new Date(utcTime.getTime() + (timezoneOffset * 1000));
+	  const hours = localTime.getUTCHours(); 
+	  const isDayTime = hours >= 6 && hours < 18;
+	  const timeOfDay = isDayTime ? 'day' : 'night';
 
-      switch (weatherType) {
-        case 'clear':
-          searchTab.style.backgroundImage = "url('/images/clear.jpg')";
-          break;
-        case 'clouds':
-          searchTab.style.backgroundImage = "url('/images/clouds.jpg')";
-          break;
-        case 'rain':
-          searchTab.style.backgroundImage = "url('/images/rain.jpg')";
-          break;
-        case 'snow':
-          searchTab.style.backgroundImage = "url('/images/snow.jpg')";
-          break;
-        case 'thunderstorm':
-          searchTab.style.backgroundImage = "url('/images/thunderstorm.jpg')";
-          break;
-        case 'mist':
-        case 'fog':
-        case 'haze':
-          searchTab.style.backgroundImage = "url('/images/mist.jpg')";
-          break;
-        default:
-          searchTab.style.backgroundImage = "url('/images/default.jpg')";
-          break;
-      }
-      
-      // Ensure the background covers the entire tab
-      searchTab.style.backgroundSize = 'cover';
-      searchTab.style.backgroundPosition = 'center';
-      searchTab.style.backgroundRepeat = 'no-repeat';
-      searchTab.style.backgroundAttachment = 'fixed';
-    }
+	  let imageName;
+	  
+	  switch (weatherType) {
+		case 'clear':
+		  imageName = `clear-${timeOfDay}`;
+		  break;
+		case 'clouds':
+		  imageName = `clouds-${timeOfDay}`;
+		  break;
+		case 'rain':
+		  imageName = `rain-${timeOfDay}`;
+		  break;
+		case 'snow':
+		  imageName = 'snow';
+		  break;
+		case 'thunderstorm':
+		  imageName = 'thunderstorm';
+		  break;
+		case 'mist':
+		case 'fog':
+		case 'haze':
+		  imageName = 'mist';
+		  break;
+		  imageName = 'default';
+		default:
+		  break;
+	  }
+
+	  searchTab.style.backgroundImage = `url('/images/${imageName}.jpg')`;
+	  
+	  // Ensure the background covers the entire tab
+	  searchTab.style.backgroundSize = 'cover';
+	  searchTab.style.backgroundPosition = 'center';
+	  searchTab.style.backgroundRepeat = 'no-repeat';
+	  searchTab.style.backgroundAttachment = 'fixed';
+	}
 
     function getWeatherIcon(weather) {
       const weatherType = weather.toLowerCase();
@@ -716,8 +766,9 @@
       }
     }
 
-    // Auth logic
+    // Enhanced Auth logic
     const authStatus = document.getElementById('auth-status');
+    const authIcon = document.getElementById('auth-icon');
     const loginForm = document.getElementById('login-form');
     const logoutBtn = document.getElementById('logout-btn');
     const registerBtn = document.getElementById('register-btn');
@@ -733,6 +784,8 @@
       });
       if (res.ok) {
         authStatus.textContent = `Logged in as ${username}`;
+        authStatus.classList.add('logged-in-status');
+        authIcon.textContent = 'verified_user';
         loginForm.style.display = 'none';
         logoutBtn.style.display = '';
         loadFavorites();
@@ -759,9 +812,13 @@
     logoutBtn.onclick = async function() {
       await fetch('/logout', {method:'POST'});
       authStatus.textContent = 'Not logged in';
+      authStatus.classList.remove('logged-in-status');
+      authStatus.classList.add('logged-out-status');
+      authIcon.textContent = 'account_circle';
       loginForm.style.display = '';
       logoutBtn.style.display = 'none';
       loadFavorites();
+      setTimeout(() => authStatus.classList.remove('logged-out-status'), 2000);
     };
 
     // Add favorite
